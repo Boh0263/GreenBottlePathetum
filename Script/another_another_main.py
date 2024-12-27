@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 class ClusterEnvironment:
     def __init__(self):
-        self.data = pd.DataFrame(columns=["x", "y", "label_cluster", "weight"])
+        self.data = pd.DataFrame(columns=["x", "y", "label_cluster"])
 
     def update_environment(self, new_data, n_clusters=3, step_title="Algorithm Step"):
         """
@@ -17,8 +17,8 @@ class ClusterEnvironment:
         """
         if isinstance(new_data, list):
             new_data = pd.DataFrame(new_data)
-        if not {"x", "y", "weight"}.issubset(new_data.columns):
-            raise ValueError("Input data must include 'x', 'y' and 'weight' columns.")
+        if not {"x", "y"}.issubset(new_data.columns):
+            raise ValueError("Input data must include 'x' and 'y' columns.")
 
         # Eseguiamo KMeans per il clustering
         kmeans = KMeans(n_clusters=n_clusters, random_state=42)
@@ -117,80 +117,67 @@ class ClusterAnalysis:
         # Aggiungiamo le etichette di cluster ai dati
         data['label_cluster'] = labels
 
+        # Calcoliamo il punteggio di silhouette per il clustering
+        silhouette_avg = silhouette_score(data[['x', 'y']], labels)
+        print(f"Silhouette Score per {n_clusters} cluster: {silhouette_avg:.2f}")
+
         # Visualizza il risultato del clustering
         self.cluster_env.update_environment(data, n_clusters=n_clusters,
                                             step_title=f"KMeans Clustering - {n_clusters} clusters")
-        return labels, kmeans
+        return labels, kmeans, silhouette_avg
 
     def elbow_method(self, data, max_clusters=10):
         """
         Metodo della punta di gomito per trovare il miglior numero di cluster.
         """
         inertia_values = []  # Lista per salvare i valori di inerzia
-        silhouette_scores = []  # Lista per salvare i punteggi di silhouette per ogni k
 
         for n_clusters in range(2, max_clusters + 1):
             kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-            labels = kmeans.fit_predict(data[['x', 'y']])
+            kmeans.fit(data[['x', 'y']])
+            inertia_values.append(kmeans.inertia_)
 
-            # Calcoliamo l'inerzia
-            inertia = kmeans.inertia_
-            inertia_values.append(inertia)
+        # Troviamo l'elbow (il punto di inflection) dove la riduzione dell'inerzia inizia a rallentare
+        inertia_diff = np.diff(inertia_values)  # Calcoliamo la differenza tra i valori di inerzia successivi
+        inertia_diff2 = np.diff(inertia_diff)  # Calcoliamo la seconda derivata per trovare il punto di rallentamento
 
-            # Calcoliamo il punteggio di silhouette
-            silhouette_avg = silhouette_score(data[['x', 'y']], labels)
-            silhouette_scores.append(silhouette_avg)
+        # L'indice del massimo valore della seconda derivata è il nostro elbow
+        elbow_index = np.argmax(inertia_diff2) + 2  # Offset di 2 per l'indice
 
-            print(f"{n_clusters} cluster - Inertia: {inertia:.2f}, Silhouette Score: {silhouette_avg:.2f}")
-
-            # Visualizzare ogni risultato KMeans con il numero di cluster corrente
-            self.cluster_env.update_environment(data, n_clusters=n_clusters,
-                                                step_title=f"Clustering con {n_clusters} Cluster")
-
-        # Identifichiamo il numero ottimale di cluster basato sull'inerzia (metodo del gomito)
-        best_n_clusters = np.argmin(np.gradient(inertia_values)) + 2  # Offset di 2 per l'indice
-        print(f"Numero ottimale di cluster basato sul metodo del gomito: {best_n_clusters}")
+        print(f"Numero ottimale di cluster basato sul metodo del gomito: {elbow_index}")
 
         # Plot dei valori di inerzia per il metodo del gomito
         plt.figure(figsize=(10, 6))
         plt.plot(range(2, max_clusters + 1), inertia_values, marker='o', label="Inertia")
-        plt.axvline(best_n_clusters, color='red', linestyle='--', label=f"Numero Ottimale (Elbow): {best_n_clusters}")
+        plt.axvline(elbow_index, color='red', linestyle='--', label=f"Numero Ottimale (Elbow): {elbow_index}")
         plt.title('Metodo della Punta di Gomito')
         plt.xlabel('Numero di Cluster (k)')
         plt.ylabel('Inertia')
         plt.legend()
         plt.show()
 
-        # Plot dei punteggi di silhouette
-        plt.figure(figsize=(10, 6))
-        plt.plot(range(2, max_clusters + 1), silhouette_scores, marker='o', label="Silhouette Score")
-        plt.axvline(best_n_clusters, color='red', linestyle='--', label=f"Numero Ottimale: {best_n_clusters}")
-        plt.title('Silhouette Scores per diversi valori di k')
-        plt.xlabel('Numero di Cluster (k)')
-        plt.ylabel('Silhouette Score')
-        plt.legend()
-        plt.show()
+        print("Metodo della punta di gomito completato.")
+        return elbow_index
 
-        print("Metodo della punta di gomito e Silhouette Score completato.")
-        return best_n_clusters
 
-# Creiamo un set di dati casuali con pesi
-np.random.seed(42069)
-n_points = 1000
+# Esempio di utilizzo:
+
+# Creiamo un set di dati casuali
+np.random.seed(240)
+n_points = 100
 new_data = np.random.rand(n_points, 2) * 100  # 100 punti casuali nelle coordinate 0-100
-weights = np.random.randint(1, 11, size=n_points)  # Assegniamo un peso tra 1 e 10 per ogni punto
-
-# Creiamo il DataFrame
 df_new_data = pd.DataFrame(new_data, columns=["x", "y"])
-df_new_data["weight"] = weights
 
-# Creiamo un'istanza di ClusterAnalysis
-cluster_analysis = ClusterAnalysis(n_clusters=22)
+# Crea un'istanza di ClusterAnalysis
+cluster_analysis = ClusterAnalysis(n_clusters=25)
 
 # Metodo della punta di gomito per trovare il numero ottimale di cluster
-print("Inizio metodo del gomito...")
-best_n_clusters = cluster_analysis.elbow_method(df_new_data, max_clusters=10)
+best_n_clusters = cluster_analysis.elbow_method(df_new_data, max_clusters=25)
 
-# Eseguiamo il clustering finale con il numero ottimale di cluster
-print(f"\nClustering finale con il numero ottimale di cluster: {best_n_clusters}")
-final_labels, final_model = cluster_analysis.perform_clustering(df_new_data, n_clusters=best_n_clusters)
+# Eseguiamo il clustering con il numero ottimale di cluster
+labels, kmeans_model, silhouette_avg = cluster_analysis.perform_clustering(df_new_data, n_clusters=best_n_clusters)
+
+# Calcoliamo e stampiamo il punteggio di silhouette finale
+print(f"Punteggio di silhouette finale con {best_n_clusters} cluster: {silhouette_avg:.2}")
+
+
