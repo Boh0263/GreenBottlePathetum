@@ -4,25 +4,76 @@
 import numpy as np
 import pandas as pd
 import requests
+import json
+import random
 
-# Function to get a true random number (seed) from Random.org
-def get_random_seed():
-    url = 'https://www.random.org/integers/'
-    params = {
-        'num': 1,          # Get 1 random number
-        'min': 0,          # Minimum value
-        'max': 1000000,      # Maximum value for the seed
-        'col': 1,          # Single column of random numbers
-        'base': 10,        # Decimal numbers
-        'format': 'plain', # Output format
-        'rnd': 'new'       # Fresh seed
+
+def load_api_key(config_file='config.json'):
+    """
+    Load the API key from the configuration file.
+    """
+    try:
+        with open(config_file, 'r') as file:
+            config = json.load(file)
+            return config.get("api_key", None)
+    except FileNotFoundError:
+        print(f"Configuration file {config_file} not found.")
+        return None
+    except json.JSONDecodeError:
+        print("Error decoding JSON from the configuration file.")
+        return None
+
+
+def get_random_seed(config_file='random_config.json'):
+    """
+    Get a true random integer using Random.org's JSON-RPC API (generateIntegers method).
+    If the API call fails, fall back to Python's random module.
+    """
+    # Load API key from the configuration file
+    api_key = load_api_key(config_file)
+    if api_key is None:
+        print("API key not found. Using fallback method.")
+        return random.randint(0, 1000000)  # Fallback using random module
+
+    url = "https://api.random.org/json-rpc/2/invoke"
+    headers = {
+        "Content-Type": "application/json"
     }
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        return int(response.text.strip())
-    else:
-        print("Error fetching random seed from Random.org API.")
-        return 42
+
+    # Request payload
+    payload = {
+        "jsonrpc": "2.0",
+        "method": "generateIntegers",
+        "params": {
+            "apiKey": api_key,
+            "n": 1,
+            "min": 0,
+            "max": 1000000,
+            "replacement": True  # Allow repeated values (non rilevante)
+        },
+        "id": 42  # A request ID for tracking (arbitrary number)
+    }
+
+    try:
+        # Send the request
+        response = requests.post(url, headers=headers, data=json.dumps(payload))
+        response_data = response.json()
+
+        # Extract the random number from the response
+        if "result" in response_data:
+            return response_data["result"]["random"]["data"][0]
+        else:
+            print("Error in API response:", response_data)
+            return random.randint(0, 1000000)  # Fallback using random module
+
+    except requests.RequestException as e:
+        print("HTTP Request failed:", e)
+        return random.randint(0, 1000000)  # Fallback using random module
+    except json.JSONDecodeError:
+        print("Failed to decode JSON response.")
+        return random.randint(0, 1000000)  # Fallback using random module
+
+
 
 
 def generate_uniform_data(n_points=100, x_range=(0, 100), y_range=(0, 100)):

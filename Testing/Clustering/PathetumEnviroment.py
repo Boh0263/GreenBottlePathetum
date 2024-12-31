@@ -22,10 +22,7 @@ class ClusterEnvironment:
         self._visualize(step_title)
 
     def _visualize(self, title="Clustered Data"):
-        """
-        Visualize points and clusters using Plotly with a cool design,
-        gradient background, glowing points, and dynamic cluster colors.
-        """
+
         cluster_polygons = []
         for cluster_label in self.data["label_cluster"].unique():
             if cluster_label == -1:
@@ -74,7 +71,7 @@ class ClusterEnvironment:
                 line=dict(width=2, color='black'),  # Black outline for points to make them pop
                 showscale=False  # Hide the color scale (slider)
             ),
-            text=self.data["label_cluster"],
+            text=self.data["label_cluster"].apply(lambda x: "Outliers" if x == -1 else f"Cluster {x}"),
             hoverinfo="text+x+y",
             name="Data Points"
         )
@@ -101,7 +98,6 @@ class ClusterEnvironment:
                 'layer': 'below',
                 'line': {'width': 0}
             }],
-
             xaxis_showgrid=True,
             yaxis_showgrid=True
         )
@@ -109,71 +105,3 @@ class ClusterEnvironment:
         # Create the figure and show it
         fig = go.Figure(data=[scatter] + cluster_polygons, layout=layout)
         fig.show()
-        """
-    def _visualize(self, title="Clustered Data"):
-        
-        Visualize points and clusters using Plotly, including cluster polygons
-        and colored points.
-        
-        cluster_polygons = []
-        for cluster_label in self.data["label_cluster"].unique():
-            if cluster_label == -1:
-                #Skippa outliers
-                continue
-
-            cluster_points = self.data[self.data["label_cluster"] == cluster_label][["x", "y"]]
-
-            # Create convex hull for cluster points
-            multipoint = MultiPoint(cluster_points.values)
-            convex_hull = multipoint.convex_hull
-
-            if convex_hull.geom_type == 'Polygon':
-                hull_coords = list(convex_hull.exterior.coords)
-            elif convex_hull.geom_type == 'LineString':
-                hull_coords = list(convex_hull.coords)
-            else:
-                continue
-
-            hull_x = [coord[0] for coord in hull_coords]
-            hull_y = [coord[1] for coord in hull_coords]
-
-            # Create a color for each cluster
-            cluster_color = f"rgba({np.random.randint(0, 255)}, {np.random.randint(0, 255)}, {np.random.randint(0, 255)}, 0.3)"
-
-            cluster_polygons.append(go.Scatter(
-                x=hull_x,
-                y=hull_y,
-                fill="toself",
-                fillcolor=cluster_color,
-                line=dict(width=2, color='rgba(0,0,0,0)'),
-                name=f"Cluster {cluster_label}"
-            ))
-
-        scatter = go.Scatter(
-            x=self.data["x"],
-            y=self.data["y"],
-            mode="markers",
-            marker=dict(
-                size=10,
-                color=self.data["label_cluster"],
-                colorscale="Jet",
-                opacity=0.6
-            ),
-            text=self.data["label_cluster"],
-            hoverinfo="text+x+y"
-        )
-
-
-        layout = go.Layout(
-            title=title,
-            xaxis=dict(title="X", range=[0, 100]),
-            yaxis=dict(title="Y", range=[0, 100]),
-            showlegend=True,
-            plot_bgcolor='white',
-            paper_bgcolor='rgba(0,0,0,0.2)',
-            font=dict(color='black')
-        )
-
-        fig = go.Figure(data=[scatter] + cluster_polygons, layout=layout)
-        fig.show()
-"""
