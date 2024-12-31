@@ -42,25 +42,46 @@ This clustering approach addresses the problem of categorizing orders and mappin
 
 To validate the system functionality, follow these steps:
 
-1. Clone the repository if not done already:
+1. **Clone the repository (if not done already)**:
 
    ```bash
    git clone https://github.com/Boh0263/GreenBottlePathetum.git
    ```
 
-2. Navigate to the testing directory:
+2. **Navigate to the testing directory**:
 
    ```bash
    cd GreenBottlePathetum/Testing
    ```
 
-3. Install dependencies:
+3. **Install dependencies**:
 
    ```bash
    pip install -r ../requirements.txt
    ```
+4. **Set the RANDOM.ORG API Key (Optional)**:
+   The project uses the RANDOM.ORG JSON-RPC API to randomize datasets. 
+   If the API key is not set, the generator uses Python's 'random' module as a fallback method.
 
-4. Execute the test script:
+   - **Access the Dataset Directory**:
+          ```bash
+          cd GreenBottlePathetum/Testing/Dataset
+          ```
+   - **Edit the `random_config.json` file**:
+      Open the `random_config.json` file in a text editor (e.g., nano, vim, or a graphical text editor like VSCode).
+      Find the `api_key` key inside the file. It should appear like the following example:
+       ```nano
+      {   
+          "api_key": "YOUR_RANDOM_ORG_API_KEY_HERE"
+      }
+      ```
+   - **Get an API Key**:
+       Go to RANDOM.ORG and sign up to get an API key (if you don't have one already).
+       Replace "YOUR_RANDOM_ORG_API_KEY" with your actual key.
+
+   - **Save and Close the File**:
+      Once you've added the API key, save the changes to the `random_config.json` file and close the editor.
+5. **Execute the test script**:
 
    ```bash
    python main.py
