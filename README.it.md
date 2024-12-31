@@ -38,36 +38,58 @@ L'approccio di clustering affronta il problema della categorizzazione degli ordi
    pip install -r requirements.txt
    ```
 
-## Test
+## Testing
 
 Per testare il sistema, seguire questi passaggi:
 
-1. Clonare il repository (se non già fatto):
+1. **Clonare il repository (se non già fatto)**:
 
    ```bash
    git clone https://github.com/Boh0263/GreenBottlePathetum.git
    ```
 
-2. Accedere alla directory Testing:
+2. **Accedere alla directory Testing**:
 
    ```bash
    cd GreenBottlePathetum/Testing
    ```
 
-3. Installare le dipendenze:
+3. **Installare le dipendenze**:
 
    ```bash
    pip install -r ../requirements.txt
    ```
+4. **Impostare l' API Key di RANDOM.ORG (Opzionale)**:
+   Il progetto utilizza l'API JSON-RPC di RANDOM.ORG per randomizzare i dataset.
+   Se l'api key non è impostata, il generatore usa il modulo 'random' di python come fallback method.
 
-4. Eseguire lo script di test:
+   - **Accedere alla directory Dataset**
+          ```bash
+          cd GreenBottlePathetum/Testing/Dataset
+          ```
+   - **Modificare il file `random_config.json`**:  
+      Apri il file random_config.json in un editor di testo (ad esempio nano, vim, o un editor di testo grafico come VSCode).
+      Trova la chiave api_key all'interno del file. Dovrebbe apparire come nel seguente esempio:
+       ```nano
+      {   
+          "api_key": "YOUR_RANDOM_ORG_API_KEY_HERE"
+      }
+      ```
+   - **Ottieni una API Key**:
+       Vai su RANDOM.ORG e registrati per ottenere una chiave API (se non ne hai già una).
+       Sostituisci "YOUR_RANDOM_ORG_API_KEY" con la tua chiave effettiva.
+
+   - **Salva e chiudi il file**:
+      Una volta aggiunta la chiave API, salva le modifiche al file random_config.json e chiudi l'editor.
+
+
+6. **Eseguire lo script di test**:
 
    ```bash
    python main.py
    ```
 
 Il sistema eseguirà un clustering di esempio su un dataset e mostrerà i risultati.
-
 ## Dettagli Tecnici
 
 ### Preprocessing dei Dati
