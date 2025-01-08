@@ -54,31 +54,85 @@ class KMeansAnalysis(ClusterAnalysis):
         return optimal_k
 
     def elbow_method(self, data):
-
         inertia_values = []
 
+        # Calcolo dell'inerzia per diversi valori di k
         for n_clusters in range(2, self.max_clusters + 1):
             kmeans = KMeans(n_clusters=n_clusters, random_state=42)
             kmeans.fit(data[['x', 'y']])
             inertia_values.append(kmeans.inertia_)
 
-        # Plot Elbow Method
+        # Calcolo della differenza assoluta tra valori consecutivi di inerzia
+        inertia_diff = np.abs(np.diff(inertia_values))
+
+        # Trovare il punto di piega come il primo valore di k dove la riduzione rallenta
+        elbow_index = np.argmax(inertia_diff < 0.1 * inertia_diff[0]) + 2
+
+        # Tracciamento del grafico
         plt.figure(figsize=(10, 6))
         plt.plot(range(2, self.max_clusters + 1), inertia_values, marker='o', label="Inertia")
+        plt.axvline(x=elbow_index, color='red', linestyle='--', label=f"Optimal k: {elbow_index}")
         plt.title('Elbow Method')
         plt.xlabel('Number of Clusters (k)')
         plt.ylabel('Inertia')
         plt.legend()
-
-        # Indicate the optimal K with a red dotted line
-        inertia_diff = np.diff(inertia_values)
-        inertia_diff2 = np.diff(inertia_diff)
-        elbow_index = np.argmax(inertia_diff2) + 2
-        plt.axvline(x=elbow_index, color='red', linestyle='--', label=f"Optimal k: {elbow_index}")
-
-        print(f"Optimal number of clusters (Elbow Method): {elbow_index}")
         plt.show()
 
+        print(f"Optimal number of clusters (Elbow Method): {elbow_index}")
+        return elbow_index
+
+    def refined_elbow_method(self, data, tolerance=1000):
+        inertia_values = []
+
+        # Initial computation of inertia for range of cluster counts
+        for n_clusters in range(2, self.max_clusters + 1):
+            kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+            kmeans.fit(data[['x', 'y']])
+            inertia_values.append(kmeans.inertia_)
+
+        def find_elbow(inertia, tolerance):
+            """Finds elbow points by analyzing drops in inertia."""
+            inertia_diff = np.abs(np.diff(inertia))
+            elbow_indices = []
+
+            for i in range(1, len(inertia_diff)):
+                if inertia_diff[i] < tolerance * inertia_diff[0]:
+                    elbow_indices.append(i + 1)
+
+            return elbow_indices
+
+        elbow_indices = find_elbow(inertia_values, tolerance)
+
+        # Iterative refinement of elbow selection
+        refined_elbow = None
+        while len(elbow_indices) > 1:
+            sub_range = list(range(elbow_indices[0] + 2, elbow_indices[-1] + 3))  # Adjust range to avoid overlap
+            inertia_values_sub = []
+
+            for n_clusters in sub_range:
+                kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+                kmeans.fit(data[['x', 'y']])
+                inertia_values_sub.append(kmeans.inertia_)
+
+            elbow_indices = find_elbow(inertia_values_sub, tolerance)
+
+            if len(elbow_indices) == 1:
+                refined_elbow = sub_range[elbow_indices[0] - 1]
+
+        # Final optimal number of clusters
+        elbow_index = elbow_indices[0] if elbow_indices else (refined_elbow if refined_elbow else 2)
+
+        # Plot the inertia values and the detected elbow point
+        plt.figure(figsize=(10, 6))
+        plt.plot(range(2, min(self.max_clusters + 1, len(data))), inertia_values, marker='o', label="Inertia")
+        plt.axvline(x=elbow_index, color='red', linestyle='--', label=f"Optimal k: {elbow_index}")
+        plt.title('Refined Elbow Method')
+        plt.xlabel('Number of Clusters (k)')
+        plt.ylabel('Inertia')
+        plt.legend()
+        plt.show()
+
+        print(f"Refined optimal number of clusters: {elbow_index}")
         return elbow_index
 
     def silhouette_method(self, data):
