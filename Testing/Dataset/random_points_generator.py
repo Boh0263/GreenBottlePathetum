@@ -6,9 +6,10 @@ import pandas as pd
 import requests
 import json
 import random
+import os
 
 
-def load_api_key(config_file='config.json'):
+def load_api_key(config_file='random_config.json'):
     """
     Load the API key from the configuration file.
     """
